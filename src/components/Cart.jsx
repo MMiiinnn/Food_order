@@ -21,7 +21,6 @@ export default function Cart() {
 
   function handleGoToCheckout() {
     userProgressCtx.showCheckout();
-    console.log("Clicked");
   }
 
   return (
