@@ -6,6 +6,7 @@ import Input from "./UI/Input";
 import Button from "./UI/Button";
 import UserProgressContext from "../store/UserProgressContext";
 import useHttp from "./Hooks/useHttp";
+import { useActionState } from "react";
 
 const requestConfig = {
   method: "POST",
@@ -24,12 +25,10 @@ export default function Checkout() {
   const cartCtx = useContext(CartContext);
   const userProgressCtx = useContext(UserProgressContext);
 
-  const {
-    data,
-    isLoading: isSending,
-    error,
-    sendRequest,
-  } = useHttp("http://localhost:3000/orders", requestConfig);
+  const { data, error, sendRequest, clearData } = useHttp(
+    "http://localhost:3000/orders",
+    requestConfig
+  );
 
   const cartTotal = cartCtx.items.reduce(
     (totalPrice, item) => totalPrice + item.price * item.quantity,
@@ -43,14 +42,27 @@ export default function Checkout() {
   function handleFinish() {
     userProgressCtx.hideCheckout();
     cartCtx.clearCart();
+    clearData();
   }
 
-  function handleSubmit(event) {
-    event.preventDefault();
+  // function handleSubmit(event) {
+  //   event.preventDefault();
 
-    const fd = new FormData(event.target);
+  //   const fd = new FormData(event.target);
+  //   const customerData = Object.fromEntries(fd.entries());
+  //   sendRequest(
+  //     JSON.stringify({
+  //       order: {
+  //         items: cartCtx.items,
+  //         customer: customerData,
+  //       },
+  //     })
+  //   );
+  // }
+
+  async function checkoutAction(prevState, fd) {
     const customerData = Object.fromEntries(fd.entries());
-    sendRequest(
+    await sendRequest(
       JSON.stringify({
         order: {
           items: cartCtx.items,
@@ -59,6 +71,11 @@ export default function Checkout() {
       })
     );
   }
+
+  const [formState, formAciton, isSending] = useActionState(
+    checkoutAction,
+    null
+  );
 
   let actions = (
     <>
@@ -98,7 +115,7 @@ export default function Checkout() {
       open={userProgressCtx.progress === "checkout"}
       onClose={handleCloseCheckout}
     >
-      <form onSubmit={handleSubmit}>
+      <form action={formAciton}>
         <h2>Checkout</h2>
         <p>Total Amount: {currencyFormatter.format(cartTotal)}</p>
 
