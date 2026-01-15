@@ -1,69 +1,67 @@
-import fs from 'node:fs/promises';
+import express from "express";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import cors from "cors";
+import { Meal, Order } from "./models/Schemas.js";
 
-import bodyParser from 'body-parser';
-import express from 'express';
-
+dotenv.config();
 const app = express();
 
-app.use(bodyParser.json());
-app.use(express.static('public'));
+// Middleware
+app.use(express.json());
+app.use(cors()); // Tự động xử lý Header Access-Control-Allow-Origin
+app.use(express.static("public"));
 
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-  next();
+// Kết nối MongoDB Atlas
+const MONGODB_URI = process.env.MONGODB_URI;
+mongoose
+  .connect(MONGODB_URI)
+  .then(() => console.log("✅ Kết nối MongoDB thành công!"))
+  .catch((err) => console.error("❌ Lỗi kết nối MongoDB:", err));
+
+// 1. API Lấy danh sách món ăn
+app.get("/api/meals", async (req, res) => {
+  try {
+    const meals = await Meal.find();
+    res.json(meals);
+  } catch (error) {
+    res.status(500).json({ message: "Không thể lấy dữ liệu món ăn." });
+  }
 });
 
-app.get('/meals', async (req, res) => {
-  const meals = await fs.readFile('./data/available-meals.json', 'utf8');
-  res.json(JSON.parse(meals));
-});
-
-app.post('/orders', async (req, res) => {
+// 2. API Gửi đơn hàng
+app.post("/api/orders", async (req, res) => {
   const orderData = req.body.order;
 
-  if (orderData === null || orderData.items === null || orderData.items.length === 0) {
+  // Validate cơ bản
+  if (!orderData || !orderData.items || orderData.items.length === 0) {
+    return res.status(400).json({ message: "Dữ liệu đơn hàng trống." });
+  }
+
+  const { email, name, street, city } = orderData.customer;
+  if (
+    !email?.includes("@") ||
+    !name?.trim() ||
+    !street?.trim() ||
+    !city?.trim()
+  ) {
     return res
       .status(400)
-      .json({ message: 'Missing data.' });
+      .json({ message: "Thông tin khách hàng không hợp lệ." });
   }
 
-  if (
-    orderData.customer.email === null ||
-    !orderData.customer.email.includes('@') ||
-    orderData.customer.name === null ||
-    orderData.customer.name.trim() === '' ||
-    orderData.customer.street === null ||
-    orderData.customer.street.trim() === '' ||
-    orderData.customer['postal-code'] === null ||
-    orderData.customer['postal-code'].trim() === '' ||
-    orderData.customer.city === null ||
-    orderData.customer.city.trim() === ''
-  ) {
-    return res.status(400).json({
-      message:
-        'Missing data: Email, name, street, postal code or city is missing.',
-    });
+  try {
+    const newOrder = new Order(orderData);
+    await newOrder.save();
+    res
+      .status(201)
+      .json({ message: "Đặt hàng thành công!", orderId: newOrder._id });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi server khi lưu đơn hàng." });
   }
-
-  const newOrder = {
-    ...orderData,
-    id: (Math.random() * 1000).toString(),
-  };
-  const orders = await fs.readFile('./data/orders.json', 'utf8');
-  const allOrders = JSON.parse(orders);
-  allOrders.push(newOrder);
-  await fs.writeFile('./data/orders.json', JSON.stringify(allOrders));
-  res.status(201).json({ message: 'Order created!' });
 });
 
-app.use((req, res) => {
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
+// Route mặc định cho Vercel
+app.get("/", (req, res) => res.send("Backend is running..."));
 
-  res.status(404).json({ message: 'Not found' });
-});
-
-app.listen(3000);
+export default app;
