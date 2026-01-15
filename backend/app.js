@@ -15,7 +15,9 @@ app.use(express.static("public"));
 // Kết nối MongoDB Atlas
 const MONGODB_URI = process.env.MONGODB_URI;
 mongoose
-  .connect(MONGODB_URI)
+  .connect(MONGODB_URI, {
+    dbName: "food-db", // Ép Mongoose phải vào đúng database này
+  })
   .then(() => console.log("✅ Kết nối MongoDB thành công!"))
   .catch((err) => console.error("❌ Lỗi kết nối MongoDB:", err));
 
