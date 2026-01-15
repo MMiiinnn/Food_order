@@ -23,6 +23,7 @@ mongoose
 app.get("/api/meals", async (req, res) => {
   try {
     const meals = await Meal.find();
+    console.log(meals);
     res.json(meals);
   } catch (error) {
     res.status(500).json({ message: "Không thể lấy dữ liệu món ăn." });
