@@ -22,5 +22,5 @@ const orderSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-export const Meal = mongoose.model("Meal", mealSchema);
+export const Meal = mongoose.model("Meal", mealSchema, "available-meals");
 export const Order = mongoose.model("Order", orderSchema);
