@@ -16,7 +16,11 @@
       "destination": "/backend/app.js"
     },
     {
-      "source": "/(.*)",
+      "source": "/images/(.*)",
+      "destination": "/images/$1"
+    },
+    {
+      "source": "/((?!api|images).* )",
       "destination": "/index.html"
     }
   ]
