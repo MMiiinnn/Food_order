@@ -16,8 +16,8 @@
       "destination": "/backend/app.js"
     },
     {
-      "source": "/images/(.*)",
-      "destination": "/images/$1"
+      "source": "/images/:path*",
+      "destination": "/images/:path*"
     },
     {
       "source": "/(.*)",
