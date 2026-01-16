@@ -10,7 +10,7 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors()); // Tự động xử lý Header Access-Control-Allow-Origin
-app.use(express.static("public"));
+// app.use(express.static("public"));
 
 // Kết nối MongoDB Atlas
 const MONGODB_URI = process.env.MONGODB_URI;
